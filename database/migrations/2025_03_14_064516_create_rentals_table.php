@@ -14,7 +14,7 @@ class CreateRentalsTable extends Migration
             $table->time('start_time')->nullable(); // СТАРТ
             $table->time('end_time')->nullable(); // ФИНИШ
             $table->decimal('amount', 10, 2)->nullable(); // сумма
-            $table->string('payment_method')->nullable(); // Оплата (Рома, Миша, Саша, Касса)
+            $table->string('payment_method')->nullable(); // (Рома, Миша, Саша, Касса)
             $table->decimal('net_profit', 10, 2)->nullable(); // Приб.чист.
             $table->decimal('cash', 10, 2)->nullable(); // касса
             $table->decimal('card_sasha', 10, 2)->nullable(); // карта саша

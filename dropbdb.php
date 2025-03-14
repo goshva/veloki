@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 require 'vendor/autoload.php';
 
@@ -5,7 +6,12 @@ use Dotenv\Dotenv;
 
 // Load environment variables from .env file
 $dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->load();
+try {
+    $dotenv->load();
+    echo ".env file loaded successfully.\n";
+} catch (Exception $e) {
+    echo "Could not load .env file: " . $e->getMessage();
+}
 
 // Database configuration from environment variables
 $host = getenv('DB_HOST');
@@ -13,6 +19,12 @@ $db = getenv('DB_DATABASE');
 $user = getenv('DB_USERNAME');
 $pass = getenv('DB_PASSWORD');
 $port = getenv('DB_PORT');
+
+// Debug statements to print environment variables
+echo "Host: $host\n";
+echo "Database: $db\n";
+echo "User: $user\n";
+echo "Port: $port\n";
 
 try {
     // Create a new PDO instance
