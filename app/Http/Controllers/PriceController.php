@@ -56,4 +56,29 @@ class PriceController extends Controller
         $price->delete();
         return redirect()->route('prices.index')->with('success', 'Price deleted successfully.');
     }
+    public function calculateRental(Request $request)
+    {
+        $request->validate([
+            'mechanical_bikes' => 'required|integer|min:0',
+            'electric_bikes' => 'required|integer|min:0',
+            'start_time' => 'required|date_format:Y-m-d H:i:s',
+            'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
+        ]);
+
+        $calculator = new BikeRentalCalculator();
+        
+        $totalPrice = $calculator->calculateTotalPrice(
+            $request->mechanical_bikes,
+            $request->electric_bikes,
+            new DateTime($request->start_time),
+            new DateTime($request->end_time)
+        );
+
+        return response()->json([
+            'success' => true,
+            'total_price' => $totalPrice,
+            'formatted_price' => number_format($totalPrice, 2),
+        ]);
+    }
+
 }

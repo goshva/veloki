@@ -15,6 +15,7 @@ Route::post('/orders/{order}/finish', [OrderController::class, 'finish'])->name(
 
 Route::get('/search-clients', [OrderController::class, 'searchClients'])->name('orders.search-clients');
 Route::resource('prices', PriceController::class);
+Route::post('/calculate-rental', [PriceController::class, 'calculateRental'])->name('prices.calculate-rental');
 Route::resource('clients', ClientController::class);
 Route::resource('bikes', BikeController::class);
 Route::post('/webhook', [WebhookController::class, 'handle']);
