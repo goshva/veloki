@@ -8,7 +8,11 @@ use App\Http\Controllers\PriceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RentalCalculatorController;
+
+Route::post('/api/calculate-rental', [RentalCalculatorController::class, 'calculate']);
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
 Route::resource('finances', FinanceController::class);
 Route::resource('orders', OrderController::class);
 Route::post('/orders/{order}/finish', [OrderController::class, 'finish'])->name('orders.finish');
@@ -19,3 +23,15 @@ Route::post('/calculate-rental', [PriceController::class, 'calculateRental'])->n
 Route::resource('clients', ClientController::class);
 Route::resource('bikes', BikeController::class);
 Route::post('/webhook', [WebhookController::class, 'handle']);
+
+Route::post('/api/calculate-rental', function (Request $request) {
+    $calculator = new \App\Services\BikeRentalCalculator();
+    
+    $price = $calculator->calculatePrice(
+        $request->bike_group,
+        Carbon::parse($request->start_time),
+        Carbon::parse($request->end_time)
+    );
+    
+    return response()->json(['price' => $price]);
+});
