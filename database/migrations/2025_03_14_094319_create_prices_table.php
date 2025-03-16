@@ -11,8 +11,8 @@ class CreatePricesTable extends Migration
         Schema::create('prices', function (Blueprint $table) {
             $table->id();
             $table->enum('bike_group', ['mechanical', 'electric']); // Bike type group
-            $table->string('period'); // Duration (e.g., "1 hour", "3 hours", "24 hours", "until 20:00")
-            $table->decimal('duration', 10, 2); // Period in hour
+            $table->decimal('period'); // Duration (e.g., "1 hour", "3 hours", "24 hours", "until 20:00")
+            $table->string('duration');
             $table->decimal('price', 10, 2); // Price in ₽
             $table->timestamps();
         });
