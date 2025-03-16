@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
@@ -26,69 +28,96 @@ class Order extends Model
 
     public function calculatePrice()
     {
-        if (!$this->end_time) {
-            // If the order is still active, estimate price based on current time
-            $endTime = Carbon::now();
-        } else {
-            $endTime = Carbon::parse($this->end_time);
+        // Check if the order status is completed
+        if ($this->status !== 'completed') {
+            Log::warning("Attempted to calculate price for a non-completed order ID $this->id.");
+            return 0; // Return 0 or handle as needed for non-completed orders
         }
 
+        $endTime = Carbon::parse($this->end_time);
         $startTime = Carbon::parse($this->start_time);
-        $hours = $startTime->diffInHours($endTime);
+        $selectedPeriod = $this->determineRentalPeriod($startTime, $endTime);
+        $bikeGroups = $this->countBikesByGroup();
 
-        // Determine the applicable period
-        $periods = [1, 3, 24]; // Defined rental periods
-        $selectedPeriod = 24; // Default to 24 hours if exceeds all periods
-
-        if ($hours <= 1) {
-            $selectedPeriod = 1;
-        } elseif ($hours <= 3) {
-            $selectedPeriod = 3;
-        } elseif ($hours <= 24) {
-            $selectedPeriod = 24;
-        }
-
-        // Check "Until 20:00" condition
-        $isUntil2000 = false;
-        if ($startTime->isSameDay($endTime) && $endTime->hour <= 20) {
-            $isUntil2000 = true;
-        }
-
-        $totalPrice = 0;
-
-        foreach ($this->bikes as $bike) {
-            $group = $bike->group ?? 'mechanical'; // Default to mechanical if not set
-
-            // First, check for "Until 20:00" pricing if applicable
-            if ($isUntil2000) {
-                $priceRecord = Price::where('bike_group', $group)
-                    ->where('duration_hours', 0) // 0 represents "Until 20:00"
-                    ->first();
-                if ($priceRecord) {
-                    $totalPrice += $priceRecord->price;
-                    continue; // Skip to next bike
-                }
-            }
-
-            // Otherwise, use the selected period
-            $priceRecord = Price::where('bike_group', $group)
-                ->where('duration_hours', $selectedPeriod)
-                ->first();
-
-            if ($priceRecord) {
-                $totalPrice += $priceRecord->price;
-            } else {
-                // Fallback: Use the highest available period price
-                $fallbackPrice = Price::where('bike_group', $group)
-                    ->orderBy('duration_hours', 'desc')
-                    ->first();
-                $totalPrice += $fallbackPrice ? $fallbackPrice->price : 0;
-            }
-        }
+        $totalPrice = $this->calculateTotalPrice($bikeGroups, $selectedPeriod, $startTime, $endTime);
 
         $this->total_price = $totalPrice;
         $this->save();
 
+        Log::info("Total calculated price for order ID $this->id: $totalPrice");
+
         return $totalPrice;
+    }
+
+    private function determineRentalPeriod(Carbon $startTime, Carbon $endTime)
+    {
+        $hours = $startTime->diffInHours($endTime);
+        $periods = [1, 3, 24]; // Defined rental periods
+
+        if ($hours <= 1) {
+            return 1;
+        } elseif ($hours <= 3) {
+            return 3;
+        } elseif ($hours <= 24) {
+            return 24;
+        }
+
+        return 24; // Default to 24 hours if exceeds all periods
+    }
+
+    private function countBikesByGroup()
+    {
+        $bikeGroups = [];
+
+        foreach ($this->bikes as $bike) {
+            $group = $bike->group ?? 'mechanical'; // Default to mechanical if not set
+            if (!isset($bikeGroups[$group])) {
+                $bikeGroups[$group] = 0;
+            }
+            $bikeGroups[$group]++;
+        }
+
+        return $bikeGroups;
+    }
+
+    private function calculateTotalPrice(array $bikeGroups, int $selectedPeriod, Carbon $startTime, Carbon $endTime)
+    {
+        $totalPrice = 0;
+        $isUntil2000 = $startTime->isSameDay($endTime) && $endTime->hour <= 20;
+
+        foreach ($bikeGroups as $group => $count) {
+            $price = $this->getPriceByPeriodAndGroup($selectedPeriod, $group, $isUntil2000);
+            $totalPrice += $price * $count;
+            Log::info("Price for bike group $group for $selectedPeriod hours: $price, Count: $count, Total: " . ($price * $count));
+        }
+
+        return $totalPrice;
+    }
+
+    private function getPriceByPeriodAndGroup(int $period, string $group, bool $isUntil2000)
+    {
+        if ($isUntil2000) {
+            $priceRecord = Price::where('bike_group', $group)
+                ->where('duration_hours', 0) // 0 represents "Until 20:00"
+                ->first();
+            if ($priceRecord) {
+                return $priceRecord->price;
+            }
+        }
+
+        $priceRecord = Price::where('bike_group', $group)
+            ->where('duration_hours', $period)
+            ->first();
+
+        if ($priceRecord) {
+            return $priceRecord->price;
+        }
+
+        // Fallback: Use the highest available period price
+        $fallbackPrice = Price::where('bike_group', $group)
+            ->orderBy('duration_hours', 'desc')
+            ->first();
+
+        return $fallbackPrice ? $fallbackPrice->price : 0;
     }
 }

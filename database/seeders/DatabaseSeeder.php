@@ -18,10 +18,8 @@ class DatabaseSeeder extends Seeder
             ClientSeeder::class,
             OrderSeeder::class,
             PriceSeeder::class,
-            RentalSeeder::class,
         ]);
 
-        // Create a test user
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

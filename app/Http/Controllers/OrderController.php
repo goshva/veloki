@@ -48,11 +48,19 @@ public function index()
             'acceptor' => 'nullable|in:cash,cardR,cardM',
         ]);
     
-        // Find or create client based on phone
-        $client = Client::firstOrCreate(
-            ['phone' => $request->phone],
-            ['name' => $request->client_name ?: null]
-        );
+        // Check if a client_id was provided from autocomplete
+        if ($request->filled('client_id')) {
+            $client = Client::find($request->client_id);
+            if (!$client) {
+                return redirect()->back()->withErrors(['phone' => 'Выбранный клиент не найден.'])->withInput();
+            }
+        } else {
+            // No client_id provided, create a new client with the phone and optional name
+            $client = Client::firstOrCreate(
+                ['phone' => $request->phone],
+                ['name' => $request->client_name ?: null]
+            );
+        }
     
         $order = Order::create([
             'client_id' => $client->id,
@@ -65,9 +73,7 @@ public function index()
         if ($order->status === 'active' || $order->status === 'completed') {
             $order->calculatePrice();
         }
-        if ($order->status === 'completed' && $order->end_time) {
-            Finance::updateDailyFinance($order->end_time);
-        }
+
     
         return redirect()->route('orders.index')->with('success', 'Заказ создан успешно.');
     }
@@ -81,13 +87,29 @@ public function index()
         if ($order->status === 'active' || $order->status === 'completed') {
             $order->calculatePrice();
         }
-        if ($order->status === 'completed' && $order->end_time) {
-            Finance::updateDailyFinance($order->end_time);
-        }
+
     
         return redirect()->route('orders.index')->with('success', 'Order updated successfully.');
     }
+    public function finish(Request $request, Order $order)
+    {
+        // Validate the request data
+        $validatedData = $request->validate([
+            'status' => 'required|in:completed',
+        ]);
+    
+        // Set the end time to now
+        $validatedData['end_time'] = now();
+    
+        // Update the order
+        $order->update($validatedData);
+    
 
+            $order->calculatePrice();
+    
+        return redirect()->route('orders.index')->with('success', 'Order updated successfully.');
+    }
+    
     public function show(Order $order)
     {
         $order->load('client', 'bikes');

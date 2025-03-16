@@ -46,7 +46,20 @@
                         </td>
                         <td>{{ $order->acceptor ?? 'Нет' }}</td>
                         <td>
-                            <a href="{{ route('orders.show', $order) }}" class="btn btn-info btn-sm">👀</a>
+                            @switch($order->status)
+                                @case('completed')
+                                    <a href="{{ route('orders.show', $order) }}" class="btn btn-info">👀</a>
+                                    @break
+                                @default
+                                    <form action="{{ route('orders.finish', $order) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('POST')
+                                        <input type="hidden" name="status" value="completed">
+                                        <button type="submit" class="btn btn-success" onclick="return confirm('Вы уверены?')">🏁</button>
+                                    </form>
+                            @endswitch
+
+
                             <a href="{{ route('orders.edit', $order) }}" class="btn btn-warning btn-sm">✏️</a>
                             <form action="{{ route('orders.destroy', $order) }}" method="POST" style="display:inline;">
                                 @csrf

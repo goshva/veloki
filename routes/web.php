@@ -11,6 +11,8 @@ use App\Http\Controllers\DashboardController;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::resource('finances', FinanceController::class);
 Route::resource('orders', OrderController::class);
+Route::post('/orders/{order}/finish', [OrderController::class, 'finish'])->name('orders.finish');
+
 Route::get('/search-clients', [OrderController::class, 'searchClients'])->name('orders.search-clients');
 Route::resource('prices', PriceController::class);
 Route::resource('clients', ClientController::class);

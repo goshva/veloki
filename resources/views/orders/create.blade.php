@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Создать заказ ➕</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -7,6 +8,7 @@
         .autocomplete-container {
             position: relative;
         }
+
         .autocomplete-suggestions {
             position: absolute;
             top: 100%;
@@ -20,24 +22,28 @@
             z-index: 1000;
             display: none;
         }
+
         .autocomplete-suggestion {
             padding: 8px 12px;
             cursor: pointer;
         }
+
         .autocomplete-suggestion:hover {
             background-color: #f8f9fa;
         }
     </style>
 </head>
+
 <body>
     @include('layouts.navigation')
     <div class="container mt-5">
-        
+
         <form action="{{ route('orders.store') }}" method="POST">
             @csrf
             <div class="mb-3 autocomplete-container">
                 <label for="phone" class="form-label">Телефон клиента 📞</label>
-                <input type="text" class="form-control @error('client_id') is-invalid @enderror" id="phone" name="phone" placeholder="Введите номер телефона" autocomplete="off">
+                <input type="text" class="form-control @error('client_id') is-invalid @enderror" id="phone" name="phone"
+                    placeholder="Введите номер телефона" autocomplete="off">
                 <input type="hidden" id="client_id" name="client_id">
                 <div id="phone-suggestions" class="autocomplete-suggestions"></div>
                 @error('client_id')
@@ -46,18 +52,21 @@
             </div>
             <div class="mb-3">
                 <label for="client_name" class="form-label">Имя клиента 👤</label>
-                <input type="text" class="form-control" id="client_name" name="client_name" readonly placeholder="Имя заполнится автоматически">
+                <input type="text" class="form-control" id="client_name" name="client_name"
+                    placeholder="Имя заполнится автоматически">
             </div>
             <div class="mb-3">
                 <label for="start_time" class="form-label">Время начала 🕒</label>
-                <input type="datetime-local" class="form-control @error('start_time') is-invalid @enderror" id="start_time" name="start_time" value="{{ now()->format('Y-m-d\TH:i') }}">
+                <input type="datetime-local" class="form-control @error('start_time') is-invalid @enderror"
+                    id="start_time" name="start_time" value="{{ now()->format('Y-m-d\TH:i') }}">
                 @error('start_time')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
             <div class="mb-3">
                 <label for="bike_ids" class="form-label">Велосипеды 🚲</label>
-                <select multiple class="form-control @error('bike_ids') is-invalid @enderror" id="bike_ids" name="bike_ids[]">
+                <select multiple class="form-control @error('bike_ids') is-invalid @enderror" id="bike_ids"
+                    name="bike_ids[]">
                     @foreach ($bikes as $bike)
                         <option value="{{ $bike->id }}">{{ $bike->name }} ({{ $bike->group ?? 'механический' }})</option>
                     @endforeach
@@ -155,7 +164,13 @@
                 clientNameInput.value = '';
             }
         });
-
+        phoneInput.addEventListener('blur', function () {
+            if (!clientIdInput.value && this.value) {
+                console.log('New client will be created with phone:', this.value);
+                // Optionally display a UI hint
+                clientNameInput.placeholder = 'Новый клиент будет создан';
+            }
+        });
         document.addEventListener('click', function (e) {
             if (!phoneInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
                 suggestionsDiv.style.display = 'none';
@@ -171,4 +186,5 @@
         }
     </script>
 </body>
+
 </html>
