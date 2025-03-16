@@ -5,5 +5,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Price extends Model
 {
-    protected $fillable = ['bike_group', 'duration', 'price'];
+    protected $fillable = ['bike_group', 'duration', 'period', 'price'];
 }
